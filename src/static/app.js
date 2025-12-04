@@ -27,7 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="participants-section">
               <strong>Participants:</strong>
               <ul class="participants-list">
-                ${details.participants.map(email => `<li>${email}</li>`).join("")}
+                ${details.participants.map(email => `<li class="participant-item">${email} <span class="delete-icon" title="Remove" data-activity="${name}" data-email="${email}">&#128465;</span></li>`).join("")}
               </ul>
             </div>
           `;
@@ -47,6 +47,31 @@ document.addEventListener("DOMContentLoaded", () => {
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
           ${participantsHTML}
         `;
+  // Handle participant delete icon click
+  activitiesList.addEventListener("click", async (event) => {
+    if (event.target.classList.contains("delete-icon")) {
+      const activityName = event.target.getAttribute("data-activity");
+      const email = event.target.getAttribute("data-email");
+      if (activityName && email) {
+        try {
+          const response = await fetch(`/activities/${encodeURIComponent(activityName)}/unregister`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ email })
+          });
+          if (response.ok) {
+            fetchActivities();
+          } else {
+            alert("Failed to unregister participant.");
+          }
+        } catch (err) {
+          alert("Error occurred while unregistering participant.");
+        }
+      }
+    }
+  });
 
         activitiesList.appendChild(activityCard);
 
@@ -83,6 +108,8 @@ document.addEventListener("DOMContentLoaded", () => {
         messageDiv.textContent = result.message;
         messageDiv.className = "success";
         signupForm.reset();
+        // Refresh activities list immediately after successful signup
+        fetchActivities();
       } else {
         messageDiv.textContent = result.detail || "An error occurred";
         messageDiv.className = "error";
